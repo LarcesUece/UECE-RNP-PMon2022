@@ -89,7 +89,7 @@ def request(name, source, destination, type, time_range, target_bandwidth="99999
         return "Error: " + response.status_code
 
 
-def request_atraso(name, source, destination, type, time_range):
+def request_atraso(name, source, destination, type, time_range, label):
     url = "http://monipe-central.rnp.br/esmond/perfsonar/archive/?"
     hearder = {"pscheduler-test-type": type, "source": source,
                "destination": destination, "time-range": time_range}
@@ -102,19 +102,63 @@ def request_atraso(name, source, destination, type, time_range):
         for obj in json_data:
             types_list = obj['event-types']
             for obj_types in types_list:
-                if obj_types.get('event-type') == 'histogram-owdelay':
+                if obj_types.get('event-type') == label:
                     bases.append(obj_types.get('base-uri'))
                     break
         with open(name+" esmond data " + today.strftime("%m-%d-%Y")+".csv", "w") as f:
             for link in bases:
                 values = get_data(link, time_range)
+                i = 1
+                items = []
+                tempos = []
                 for value in values:
-                    value['val'] = calc_mean(value['val'])
+                    if i == 1:
+                        tempos.append(value['ts'])
+                    items.append(calc_mean(value['val']))
+                    if len(items) == 15:
+                        dif = value['ts'] - tempos[0]
+                        if dif > 1000:
+                            f.write(
+                                f"{tempos[0]}, {value['ts']}, {sum(items)/len(items)} ##\n")
+                        else:
+                            f.write(
+                                f"{tempos[0]}, {value['ts']}, {sum(items)/len(items)}\n")
+                        tempos = []
+                        items = []
+                        i = 1
+                        continue
+                    i += 1
+
+
+def request_perda(name, source, destination, type, time_range, label):
+    url = "http://monipe-central.rnp.br/esmond/perfsonar/archive/?"
+    hearder = {"pscheduler-test-type": type, "source": source,
+               "destination": destination, "time-range": time_range}
+    response = requests.get(url, params=hearder)
+    json_data = response.json()
+    values = []
+    if (response.status_code == 200):
+        print("Ok")
+        bases = []
+        for obj in json_data:
+            types_list = obj['event-types']
+            for obj_types in types_list:
+                if obj_types.get('event-type') == label:
+                    bases.append(obj_types.get('base-uri'))
+                    break
+        with open(name+" esmond data " + today.strftime("%m-%d-%Y")+".csv", "w") as f:
+            for link in bases:
+                values = get_data(link, time_range)
+                tempos = [i['ts'] for i in values]
+                tempos.sort()
+                for value in values:
                     f.write(f"{value['ts']}, {value['val']}\n")
 
 
 # request("cubic", "monipe-ce-banda.rnp.br", "monipe-sp-banda.rnp.br", "throughput", "15552000") # 6 meses
 # request("bbr", "monipe-ce-banda.rnp.br", "monipe-sp-banda.rnp.br", "throughput", "15552000", "10000000000") # 6 meses
-
 request_atraso("atraso", "monipe-ce-atraso.rnp.br",
-               "monipe-sp-atraso.rnp.br", "latencybg", "7776000")
+               "monipe-sp-atraso.rnp.br", "latencybg", "7776000", "histogram-owdelay")  # 3 meses
+
+request_perda("perda", "monipe-ce-atraso.rnp.br",
+              "monipe-sp-atraso.rnp.br", "rtt", "7776000", "packet-count-lost-bidir")  # 3 meses
