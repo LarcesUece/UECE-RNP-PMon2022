@@ -105,7 +105,7 @@ def request_atraso(name, source, destination, type, time_range, label):
                 if obj_types.get('event-type') == label:
                     bases.append(obj_types.get('base-uri'))
                     break
-        with open(name+" esmond data " + today.strftime("%m-%d-%Y")+".csv", "w") as f:
+        with open(name+" esmond data " + source.split('-')[1] + '-' + destination.split('-')[1] + ' ' + today.strftime("%m-%d-%Y")+".csv", "w") as f:
             for link in bases:
                 values = get_data(link, time_range)
                 i = 1
@@ -157,8 +157,9 @@ def request_perda(name, source, destination, type, time_range, label):
 
 # request("cubic", "monipe-ce-banda.rnp.br", "monipe-sp-banda.rnp.br", "throughput", "15552000") # 6 meses
 # request("bbr", "monipe-ce-banda.rnp.br", "monipe-sp-banda.rnp.br", "throughput", "15552000", "10000000000") # 6 meses
-request_atraso("atraso", "monipe-ce-atraso.rnp.br",
-               "monipe-sp-atraso.rnp.br", "latencybg", "7776000", "histogram-owdelay")  # 3 meses
+# request_atraso("atraso", "monipe-ce-atraso.rnp.br","monipe-sp-atraso.rnp.br", "latencybg", "15552000", "histogram-owdelay")  # 3 meses
 
-request_perda("perda", "monipe-ce-atraso.rnp.br",
-              "monipe-sp-atraso.rnp.br", "rtt", "7776000", "packet-count-lost-bidir")  # 3 meses
+request_atraso("atraso", "monipe-pa-atraso.rnp.br",
+               "monipe-ba-atraso.rnp.br", "latencybg", "15552000", "histogram-owdelay")  # 3 meses
+
+# request_perda("perda", "monipe-ce-atraso.rnp.br","monipe-sp-atraso.rnp.br", "rtt", "7776000", "packet-count-lost-bidir")  # 3 meses
