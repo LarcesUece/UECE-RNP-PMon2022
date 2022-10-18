@@ -1,3 +1,5 @@
+from email import header
+from sunau import Au_read
 import requests
 from datetime import date, datetime
 from calendar import timegm
@@ -11,6 +13,8 @@ def get_data(url_slice, time_range):
     url = base+url_slice
     header = {"time-range": time_range}
     response = requests.get(url, params=header)
+    url_final = url + "/?time-range=" + header["time-range"]
+    print(url_final[:-1])
     json_data = response.json()
     return json_data
 
@@ -91,9 +95,14 @@ def request(name, source, destination, type, time_range, target_bandwidth="99999
 
 def request_atraso(name, source, destination, type, time_range, label):
     url = "http://monipe-central.rnp.br/esmond/perfsonar/archive/?"
-    hearder = {"pscheduler-test-type": type, "source": source,
-               "destination": destination, "time-range": time_range}
-    response = requests.get(url, params=hearder)
+    header = {"pscheduler-test-type": type, "source": source,
+              "destination": destination, "time-range": time_range}
+    url_aux = url
+    for k, v in header.items():
+        url_aux += k + "=" + v + "&"
+    url_aux = url_aux[:-1]
+    print(url_aux)
+    response = requests.get(url, params=header)
     json_data = response.json()
     values = []
     if (response.status_code == 200):
@@ -108,26 +117,8 @@ def request_atraso(name, source, destination, type, time_range, label):
         with open(name+" esmond data " + source.split('-')[1] + '-' + destination.split('-')[1] + ' ' + today.strftime("%m-%d-%Y")+".csv", "w") as f:
             for link in bases:
                 values = get_data(link, time_range)
-                i = 1
-                items = []
-                tempos = []
                 for value in values:
-                    if i == 1:
-                        tempos.append(value['ts'])
-                    items.append(calc_mean(value['val']))
-                    if len(items) == 15:
-                        dif = value['ts'] - tempos[0]
-                        if dif > 1000:
-                            f.write(
-                                f"{tempos[0]}, {value['ts']}, {sum(items)/len(items)} ##\n")
-                        else:
-                            f.write(
-                                f"{tempos[0]}, {value['ts']}, {sum(items)/len(items)}\n")
-                        tempos = []
-                        items = []
-                        i = 1
-                        continue
-                    i += 1
+                    f.write(f"{value['ts']}, {calc_mean(value['val'])}\n")
 
 
 def request_perda(name, source, destination, type, time_range, label):
@@ -155,11 +146,23 @@ def request_perda(name, source, destination, type, time_range, label):
                     f.write(f"{value['ts']}, {value['val']}\n")
 
 
-# request("cubic", "monipe-ce-banda.rnp.br", "monipe-sp-banda.rnp.br", "throughput", "15552000") # 6 meses
-# request("bbr", "monipe-ce-banda.rnp.br", "monipe-sp-banda.rnp.br", "throughput", "15552000", "10000000000") # 6 meses
+request("cubic", "monipe-ce-banda.rnp.br", "monipe-sp-banda.rnp.br",
+        "throughput", "15552000")  # 6 meses
+request("bbr", "monipe-ce-banda.rnp.br", "monipe-sp-banda.rnp.br",
+        "throughput", "15552000", "10000000000")  # 6 meses
 # request_atraso("atraso", "monipe-ce-atraso.rnp.br","monipe-sp-atraso.rnp.br", "latencybg", "15552000", "histogram-owdelay")  # 3 meses
-
+"""
+request_atraso("atraso", "monipe-ce-atraso.rnp.br",
+               "monipe-sp-atraso.rnp.br", "latencybg", "7776000", "histogram-owdelay")  # 3 meses
+request_atraso("atraso", "monipe-df-atraso.rnp.br",
+               "monipe-rj-atraso.rnp.br", "latencybg", "7776000", "histogram-owdelay")  # 3 meses
+request_atraso("atraso", "monipe-mg-atraso.rnp.br",
+               "monipe-rs-atraso.rnp.br", "latencybg", "7776000", "histogram-owdelay")  # 3 meses
 request_atraso("atraso", "monipe-pa-atraso.rnp.br",
-               "monipe-ba-atraso.rnp.br", "latencybg", "15552000", "histogram-owdelay")  # 3 meses
+               "monipe-ba-atraso.rnp.br", "latencybg", "7776000", "histogram-owdelay")  # 3 meses
+request_atraso("atraso", "monipe-pr-atraso.rnp.br",
+               "monipe-am-atraso.rnp.br", "latencybg", "7776000", "histogram-owdelay")  # 3 meses
+request_atraso("atraso", "monipe-sp-atraso.rnp.br",
+               "monipe-rj-atraso.rnp.br", "latencybg", "7776000", "histogram-owdelay")  # 3 meses"""
 
 # request_perda("perda", "monipe-ce-atraso.rnp.br","monipe-sp-atraso.rnp.br", "rtt", "7776000", "packet-count-lost-bidir")  # 3 meses
