@@ -2,3 +2,7 @@ rpy2
 pandas
 numpy
 matplotlib
+tensorflow
+warnings
+sklearn
+scipy
