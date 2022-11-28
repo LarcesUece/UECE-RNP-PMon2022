@@ -2,7 +2,8 @@ rpy2
 pandas
 numpy
 matplotlib
-sklearn
 scipy
 natsort
 prettytable
+sklearn
+scikit-learn
